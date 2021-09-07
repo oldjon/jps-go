@@ -300,7 +300,6 @@ func (this *JPS) MakePath(node *JPSNode) {
 
 func (this *JPS) FixPath() {
 	//根据需要填充跳点中的路劲
-	//example
 	return
 }
 
