@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/heap"
 	"errors"
 	"fmt"
 )
@@ -181,7 +182,7 @@ func (this *JPS) Jump(cur, pre *JPSNode, depth int) (node *JPSNode) {
 }
 
 func (this *JPS) JPSNodeInCloseSet(jp *JPSNode) bool {
-	for _, v := range this.CloseSet.List {
+	for _, v := range this.CloseSet.Heap {
 		if v.Pos.X == jp.Pos.X && v.Pos.Y == jp.Pos.Y {
 			return true
 		}
@@ -190,7 +191,7 @@ func (this *JPS) JPSNodeInCloseSet(jp *JPSNode) bool {
 }
 
 func (this *JPS) JPSNodeInOpenSet(jp *JPSNode) *JPSNode {
-	for _, v := range this.OpenSet.List {
+	for _, v := range this.OpenSet.Heap {
 		if v.Pos.X == jp.Pos.X && v.Pos.Y == jp.Pos.Y {
 			return v
 		}
@@ -216,7 +217,7 @@ func (this *JPS) CalcH(node1, node2 *JPSNode) int {
 //此方法有切角问题
 func (this *JPS) ExtendRound(cur *JPSNode) {
 	nbs := this.Neighbours(cur)
-	for _, node := range nbs.List {
+	for _, node := range nbs.Heap {
 		jp := this.Jump(node, cur, 1000)
 		if jp != nil {
 			if this.JPSNodeInCloseSet(jp) {
@@ -241,20 +242,6 @@ func (this *JPS) ExtendRound(cur *JPSNode) {
 	return
 }
 
-func (this *JPS) GetMinFJPSNode() (int, *JPSNode) {
-	var f = -1
-	var index = -1
-	var node *JPSNode
-	for i, v := range this.OpenSet.List {
-		if v.F < f || f == -1 {
-			f = v.F
-			index = i
-			node = v
-		}
-	}
-	return index, node
-}
-
 func (this *JPS) IsEnd(p *JPSNode) bool {
 	if p == nil {
 		return false
@@ -277,14 +264,16 @@ func (this *JPS) FindPath(startpos, endpos *Pos) error {
 		if this.OpenSet.Len() == 0 {
 			break
 		}
-		i, p := this.GetMinFJPSNode()
+		p, ok := heap.Pop(this.OpenSet).(*JPSNode)
+		if !ok {
+			break
+		}
 		if this.IsEnd(p) {
 			this.MakePath(p)
 			return nil
 		}
 		this.ExtendRound(p)
 		this.CloseSet.Add(p)
-		this.OpenSet.RemoveByIndex(i)
 	}
 	return errors.New("FindPath: not find")
 }
